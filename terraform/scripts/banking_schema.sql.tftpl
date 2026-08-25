@@ -1,0 +1,161 @@
+-- banking demo schema（削除時は本ファイルと python_userdata の参照を除去）
+CREATE TABLE IF NOT EXISTS bank_users (
+  id SERIAL PRIMARY KEY,
+  login_id TEXT UNIQUE NOT NULL,
+  password_plain TEXT NOT NULL,
+  display_name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bank_accounts (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES bank_users(id),
+  account_number TEXT UNIQUE NOT NULL,
+  balance NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  holder_name_kanji TEXT NOT NULL,
+  holder_name_hiragana TEXT NOT NULL,
+  address_kanji TEXT NOT NULL DEFAULT '',
+  address_hiragana TEXT NOT NULL DEFAULT '',
+  postal_code TEXT NOT NULL DEFAULT ''
+);
+
+ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS address_kanji TEXT NOT NULL DEFAULT '';
+ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS address_hiragana TEXT NOT NULL DEFAULT '';
+ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS postal_code TEXT NOT NULL DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS bank_transfers (
+  id SERIAL PRIMARY KEY,
+  from_account_id INT NOT NULL REFERENCES bank_accounts(id),
+  to_account_number TEXT NOT NULL,
+  beneficiary_kanji TEXT NOT NULL,
+  beneficiary_hiragana TEXT NOT NULL,
+  amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON bank_users TO %I', :'app_username') \gexec
+SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON bank_accounts TO %I', :'app_username') \gexec
+SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON bank_transfers TO %I', :'app_username') \gexec
+SELECT format('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO %I', :'app_username') \gexec
+
+INSERT INTO bank_users (login_id, password_plain, display_name)
+VALUES ('demo_user', :'demo_bank_password', 'デモ太郎')
+ON CONFLICT (login_id) DO UPDATE
+SET password_plain = EXCLUDED.password_plain,
+    display_name = EXCLUDED.display_name;
+
+INSERT INTO bank_accounts (
+  user_id,
+  account_number,
+  balance,
+  holder_name_kanji,
+  holder_name_hiragana,
+  address_kanji,
+  address_hiragana,
+  postal_code
+)
+SELECT
+  u.id,
+  '1234567',
+  1234567.00,
+  'デモ太郎',
+  'でもたろう',
+  '東京都千代田区丸の内一丁目1番1号',
+  'とうきょうとちよだくまるのうちいっちょうめいちばんいちごう',
+  '100-0001'
+FROM bank_users u
+WHERE u.login_id = 'demo_user'
+ON CONFLICT (account_number) DO UPDATE
+SET balance = EXCLUDED.balance,
+    holder_name_kanji = EXCLUDED.holder_name_kanji,
+    holder_name_hiragana = EXCLUDED.holder_name_hiragana,
+    address_kanji = EXCLUDED.address_kanji,
+    address_hiragana = EXCLUDED.address_hiragana,
+    postal_code = EXCLUDED.postal_code;
+
+INSERT INTO bank_transfers (
+  from_account_id,
+  to_account_number,
+  beneficiary_kanji,
+  beneficiary_hiragana,
+  amount,
+  created_at
+)
+SELECT
+  a.id,
+  '9876543',
+  'デモ花子',
+  'でもはなこ',
+  10000.00,
+  TIMESTAMPTZ '2026-08-10 14:32:00+00'
+FROM bank_accounts a
+JOIN bank_users u ON u.id = a.user_id
+WHERE u.login_id = 'demo_user'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM bank_transfers t
+    WHERE t.from_account_id = a.id
+      AND t.beneficiary_kanji = 'デモ花子'
+      AND t.amount = 10000.00
+      AND t.created_at = TIMESTAMPTZ '2026-08-10 14:32:00+00'
+  );
+
+INSERT INTO bank_transfers (
+  from_account_id,
+  to_account_number,
+  beneficiary_kanji,
+  beneficiary_hiragana,
+  amount,
+  created_at
+)
+SELECT
+  a.id,
+  '9876543',
+  'デモ花子',
+  'でもはなこ',
+  5000.00,
+  TIMESTAMPTZ '2026-08-09 09:15:00+00'
+FROM bank_accounts a
+JOIN bank_users u ON u.id = a.user_id
+WHERE u.login_id = 'demo_user'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM bank_transfers t
+    WHERE t.from_account_id = a.id
+      AND t.beneficiary_kanji = 'デモ花子'
+      AND t.amount = 5000.00
+      AND t.created_at = TIMESTAMPTZ '2026-08-09 09:15:00+00'
+  );
+
+INSERT INTO bank_users (login_id, password_plain, display_name)
+VALUES ('demo_payee', :'demo_bank_password', 'デモ花子')
+ON CONFLICT (login_id) DO UPDATE
+SET password_plain = EXCLUDED.password_plain,
+    display_name = EXCLUDED.display_name;
+
+INSERT INTO bank_accounts (
+  user_id,
+  account_number,
+  balance,
+  holder_name_kanji,
+  holder_name_hiragana,
+  address_kanji,
+  address_hiragana,
+  postal_code
+)
+SELECT
+  u.id,
+  '9876543',
+  500000.00,
+  'デモ花子',
+  'でもはなこ',
+  '大阪府大阪市北区梅田二丁目2番2号',
+  'おおさかふおおさかしきたくうめだにちょうめにばんにごう',
+  '530-0001'
+FROM bank_users u
+WHERE u.login_id = 'demo_payee'
+ON CONFLICT (account_number) DO UPDATE
+SET holder_name_kanji = EXCLUDED.holder_name_kanji,
+    holder_name_hiragana = EXCLUDED.holder_name_hiragana,
+    address_kanji = EXCLUDED.address_kanji,
+    address_hiragana = EXCLUDED.address_hiragana,
+    postal_code = EXCLUDED.postal_code;

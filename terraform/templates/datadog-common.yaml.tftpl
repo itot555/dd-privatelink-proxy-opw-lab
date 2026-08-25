@@ -1,0 +1,35 @@
+hostname: ${hostname}
+logs_enabled: true
+
+tags:
+  - env:${dd_env}
+  - project:${project_name}
+  - role:${role}
+
+proxy:
+  http: http://${datadog_proxy_dns}:${proxy_port}
+  https: http://${datadog_proxy_dns}:${proxy_port}
+  no_proxy:
+    - ${datadog_proxy_dns}
+    - ${rds_endpoint}
+    - 169.254.169.254
+
+no_proxy_nonexact_match: true
+
+observability_pipelines_worker:
+  logs:
+    enabled: ${enable_opw_logs}
+    url: http://${datadog_proxy_dns}:${opw_logs_port}
+  traces:
+    enabled: ${enable_opw_traces}
+    url: http://${datadog_proxy_dns}:${opw_traces_port}
+
+logs_config:
+  expected_tags_duration: "1000000m"
+
+apm_config:
+  sql_obfuscation_mode: obfuscate_and_normalize
+
+process_config:
+  process_collection:
+    enabled: true

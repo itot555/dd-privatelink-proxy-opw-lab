@@ -1,0 +1,85 @@
+#------------------------------------------------------------------------------
+# このファイルを locals.tf にコピーしてから terraform apply する。
+#   cp locals.tf.example locals.tf
+#
+# locals.tf は .gitignore 対象。Owner などのタグをここで調整する。
+# 計算用 local（hostname、subnet map 等）は apply に必要なので削除しないこと。
+#------------------------------------------------------------------------------
+
+locals {
+  common_tags = merge(
+    {
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+      Project     = local.project_name
+      Owner       = var.owner
+    },
+    var.extra_tags,
+  )
+
+  proxy_subnet_map = {
+    for index in range(var.proxy_instance_count) :
+    tostring(index) => module.vpc_proxy.private_subnets[index % length(module.vpc_proxy.private_subnets)]
+  }
+
+  opw_subnet_map = {
+    for index in range(var.opw_instance_count) :
+    tostring(index) => module.vpc_proxy.private_subnets[index % length(module.vpc_proxy.private_subnets)]
+  }
+
+  ssh_allowed_cidrs = concat(var.allowed_ip, var.office_ip)
+
+  application_services = {
+    java   = "${local.project_name}-java"
+    python = "${local.project_name}-python"
+  }
+
+  # Datadog / OS hostname: {dd_env}-{role}-{index}
+  dd_hostname_java     = "${var.dd_env}-java-0"
+  dd_hostname_python   = "${var.dd_env}-python-0"
+  dd_hostname_frontend = "${var.dd_env}-frontend-0"
+  dd_hostname_squid = {
+    for index in keys(local.proxy_subnet_map) : index => "${var.dd_env}-squid-${index}"
+  }
+  dd_hostname_opw = {
+    for index in keys(local.opw_subnet_map) : index => "${var.dd_env}-opw-${index}"
+  }
+
+  dd_hostnames = merge(
+    {
+      java     = local.dd_hostname_java
+      python   = local.dd_hostname_python
+      frontend = local.dd_hostname_frontend
+    },
+    { for k, v in local.dd_hostname_squid : "squid-${k}" => v },
+    { for k, v in local.dd_hostname_opw : "opw-${k}" => v },
+  )
+
+  tenant_datadog_proxy_dns = aws_vpc_endpoint.tenant_to_proxy.dns_entry[0].dns_name
+  proxy_datadog_proxy_dns  = aws_lb.proxy.dns_name
+
+  proxy_nlb_ports = [
+    var.proxy_port,
+    var.opw_logs_port,
+    var.opw_traces_port,
+  ]
+
+  bootstrap_revision = substr(md5(join("", [
+    file("${path.module}/scripts/install_datadog_agent.sh"),
+    file("${path.module}/scripts/bootstrap_fetch.sh"),
+    file("${path.module}/scripts/userdata_common.sh"),
+    file("${path.module}/scripts/opw_userdata.sh"),
+    file("${path.module}/scripts/python_userdata.sh"),
+    file("${path.module}/scripts/java_userdata.sh"),
+    file("${path.module}/scripts/banking_schema.sql.tftpl"),
+    file("${path.module}/templates/datadog-common.yaml.tftpl"),
+    tostring(var.enable_banking_demo),
+    tostring(var.enable_rum),
+    tostring(var.enable_opw_logs),
+    tostring(var.enable_opw_traces),
+    var.opw_pipeline_id,
+    var.opw_pipeline_id_traces,
+  ])), 0, 8)
+
+  ssh_key_path = local_sensitive_file.private_key.filename
+}

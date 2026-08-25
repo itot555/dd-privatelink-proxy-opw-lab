@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dd-lab — ネットバンキング UI モック（Preview）</title>
+  <style>
+    :root {
+      /* ネットバンキング風 — 青基調（商標色の近似、Sandbox 用） */
+      --brand: #004098;
+      --brand-dark: #002d6e;
+      --brand-soft: #e8f0fb;
+      --accent: #c8102e;
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --text: #1a2332;
+      --muted: #5a6478;
+      --border: #d4dce8;
+      --shadow: 0 12px 40px rgba(0, 64, 152, 0.08);
+      --radius: 14px;
+      --font: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+      --mono: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+    }
+
+    /* Preview chrome (開発者向け — 本番 SPA には含めない) */
+    .preview-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 12px;
+    }
+
+    .preview-bar strong {
+      color: #94a3b8;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .preview-bar button {
+      padding: 6px 14px;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      background: #334155;
+      color: #f1f5f9;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .preview-bar button.active {
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .preview-bar span.hint {
+      margin-left: auto;
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Shared app chrome */
+    .app-header {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+      color: #fff;
+      padding: 0;
+    }
+
+    .app-header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.15);
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .user-chip {
+      font-size: 13px;
+      opacity: 0.95;
+    }
+
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      gap: 4px;
+      padding: 0 12px;
+    }
+
+    .nav a {
+      padding: 14px 18px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav a.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+    }
+
+    .main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font: inherit;
+      font-size: 15px;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid color-mix(in srgb, var(--brand) 35%, transparent);
+      border-color: var(--brand);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 140px;
+      padding: 13px 24px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--brand);
+      color: #fff;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:hover { background: var(--brand-dark); }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--brand);
+      border: 1px solid var(--brand);
+    }
+
+    .login-wrap {
+      min-height: calc(100vh - 52px);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(0, 64, 152, 0.08), transparent 40%),
+        var(--bg);
+    }
+
+    .login-card {
+      width: min(420px, 100%);
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .login-brand .logo-mark {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 12px;
+      background: var(--brand);
+      color: #fff;
+      border-radius: 14px;
+      font-size: 20px;
+    }
+
+    .login-brand h1 { font-size: 24px; }
+
+    .balance-hero {
+      background: linear-gradient(135deg, var(--brand-soft), #fff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .balance-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .balance-amount {
+      margin: 8px 0 4px;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .balance-amount .yen { font-size: 22px; margin-right: 4px; }
+
+    .account-meta {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .account-meta strong { color: var(--text); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .amount-out { color: var(--accent); font-weight: 700; }
+    .amount-in { color: var(--brand); font-weight: 700; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .notice {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      background: #fff5f5;
+      font-size: 12px;
+      color: #7f1d1d;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .notice code {
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <!-- プレビュー用タブ（本番 React には含めない） -->
+  <div class="preview-bar">
+    <strong>Banking UI Mock</strong>
+    <button type="button" class="active" data-screen="login">① ログイン</button>
+    <button type="button" data-screen="dashboard">② ダッシュボード</button>
+    <button type="button" data-screen="transfer">③ 振込</button>
+    <button type="button" data-screen="history">④ 取引履歴</button>
+    <span class="hint">ネットバンキング風モック（Sandbox・商標ロゴ不使用）</span>
+  </div>
+
+  <!-- ① ログイン -->
+  <section id="login" class="screen active">
+    <div class="login-wrap">
+      <div class="card login-card">
+        <div class="login-brand">
+          <div class="logo-mark">MB</div>
+          <h1>Mock Net Banking</h1>
+          <p class="subtitle" style="margin:0">dd-lab デモ用</p>
+        </div>
+        <label for="login-id">ログイン ID</label>
+        <input id="login-id" type="text" value="demo_user" readonly>
+        <label for="password">パスワード</label>
+        <input id="password" type="password" value="••••••••" readonly>
+        <button type="button" class="btn" style="width:100%">ログイン</button>
+        <div class="notice">
+          Sandbox: login_id / password は Java span・log に<strong>平文</strong>で載せ、
+          OP Traces マスキング検証に使用します（<code>demo_bank_password</code> 変数）。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② ダッシュボード -->
+  <section id="dashboard" class="screen">
+    <header class="app-header">
+      <div class="app-header-inner">
+        <div class="logo">
+          <div class="logo-mark">MB</div>
+          <span>Mock Net Banking</span>
+        </div>
+        <div class="user-chip">デモ太郎 さん</div>
+      </div>
+    </header>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a href="#" class="active">ホーム</a>
+        <a href="#">振込</a>
+        <a href="#">取引履歴</a>
+      </div>
+    </nav>
+    <main class="main">
+      <div class="balance-hero">
+        <div class="balance-label">普通預金 残高</div>
+        <div class="balance-amount"><span class="yen">¥</span>1,234,567</div>
+        <div class="account-meta">
+          口座番号 <strong>1234567</strong>　|
+          名義 <strong>デモ太郎</strong>（でもたろう）
+        </div>
+      </div>
+      <div class="card">
+        <h1>ようこそ、デモ太郎 さん</h1>
+        <p class="subtitle">CloudFront → Java → Python → PostgreSQL の E2E デモ</p>
+        <div class="quick-actions">
+          <button type="button" class="btn">振込する</button>
+          <button type="button" class="btn btn-secondary">取引履歴</button>
+        </div>
+        <div class="notice">
+          口座名義（漢字・ひらがな）は Python/Java の span・log に載せ、PII マスク検証用データとします。
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ③ 振込 -->
+  <section id="transfer" class="screen">
+    <header class="app-header">
+      <div class="app-header-inner">
+        <div class="logo">
+          <div class="logo-mark">MB</div>
+          <span>Mock Net Banking</span>
+        </div>
+        <div class="user-chip">デモ太郎 さん</div>
+      </div>
+    </header>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a href="#">ホーム</a>
+        <a href="#" class="active">振込</a>
+        <a href="#">取引履歴</a>
+      </div>
+    </nav>
+    <main class="main">
+      <div class="card">
+        <h1>振込</h1>
+        <p class="subtitle">振込先情報は trace / log に記録されます（マスク検証用）</p>
+
+        <label for="to-account">振込先口座番号</label>
+        <input id="to-account" type="text" value="9876543" readonly>
+
+        <div class="grid-2">
+          <div>
+            <label for="name-kanji">お名前（漢字）</label>
+            <input id="name-kanji" type="text" value="デモ花子" readonly>
+          </div>
+          <div>
+            <label for="name-hira">お名前（ひらがな）</label>
+            <input id="name-hira" type="text" value="でもはなこ" readonly>
+          </div>
+        </div>
+
+        <label for="amount">振込金額（円）</label>
+        <input id="amount" type="text" value="10,000" readonly>
+
+        <button type="button" class="btn">確認画面へ</button>
+        <button type="button" class="btn btn-secondary" style="margin-left:10px">キャンセル</button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ④ 取引履歴 -->
+  <section id="history" class="screen">
+    <header class="app-header">
+      <div class="app-header-inner">
+        <div class="logo">
+          <div class="logo-mark">MB</div>
+          <span>Mock Net Banking</span>
+        </div>
+        <div class="user-chip">デモ太郎 さん</div>
+      </div>
+    </header>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a href="#">ホーム</a>
+        <a href="#">振込</a>
+        <a href="#" class="active">取引履歴</a>
+      </div>
+    </nav>
+    <main class="main">
+      <div class="card">
+        <h1>取引履歴</h1>
+        <p class="subtitle">直近の振込・入出金（DBM query sample 相関用）</p>
+        <table>
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>内容</th>
+              <th>相手先</th>
+              <th>金額</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2026/08/10 14:32</td>
+              <td><span class="badge">振込</span></td>
+              <td>デモ花子</td>
+              <td class="amount-out">- ¥10,000</td>
+            </tr>
+            <tr>
+              <td>2026/08/09 09:15</td>
+              <td><span class="badge">振込</span></td>
+              <td>デモ花子</td>
+              <td class="amount-out">- ¥5,000</td>
+            </tr>
+            <tr>
+              <td>2026/08/08 18:00</td>
+              <td>給与</td>
+              <td>カブシキガイシャ モック</td>
+              <td class="amount-in">+ ¥300,000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </section>
+
+  <script>
+    document.querySelectorAll("[data-screen]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-screen]").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.screen).classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>

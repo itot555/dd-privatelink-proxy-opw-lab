@@ -1,0 +1,43 @@
+# Datadog Provider（API Key / Application Key）は環境変数で渡す。
+#   export DD_API_KEY="..."
+#   export DD_APP_KEY="..."
+# Agent が使う API Key は下の dd_api_key（Secrets Manager へ保存される）。
+
+dd_api_key = "your-datadog-api-key"
+
+# SSH / 管理アクセス許可 CIDR。必ず自分のグローバル IP に置き換えること。
+# 0.0.0.0/32 のままでは実質接続できない（0.0.0.0/0 ではない）。
+allowed_ip = ["0.0.0.0/32"]
+office_ip  = ["0.0.0.0/32"]
+
+# 必須。Datadog Synthetics Private Location の team handle（自組織の値）。
+private_location_team = "your-datadog-team-handle"
+
+# 必須。banking demo のログインパスワード（ソースに実パスワード default は置かない）。
+demo_bank_password = "replace-with-your-demo-password"
+
+# 任意。AWS タグ Owner。
+# owner = "your-name"
+
+# project_name を空のままにすると dd- + 英小文字 3 文字（例: dd-k7m）になる。
+# 固定したい場合のみ指定する（最大 12 文字）。
+# project_name = "dd-lab"
+
+dd_site = "datadoghq.com"
+
+# RUM（default 無効）。有効化するには Datadog UI で RUM アプリケーションを
+# 事前作成し、Application ID / Client Token を取得する。手順は README の「RUM」を参照。
+# enable_banking_demo = true が前提。
+enable_rum = false
+# rum_application_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# rum_client_token   = "pubxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# OPW Pipeline ID（未設定時は該当 Worker をスキップ）
+# opw_pipeline_id        = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Logs :8282
+# opw_pipeline_id_traces = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Traces :8484
+enable_opw_logs   = false
+enable_opw_traces = false
+
+# extra_tags = {
+#   CostCenter = "sandbox"
+# }

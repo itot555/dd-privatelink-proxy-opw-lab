@@ -1,0 +1,21 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: dd-lab-java
+
+python:
+  api:
+    url: ${PYTHON_API_URL:http://127.0.0.1:8000}
+
+banking:
+  demo:
+    enabled: ${BANKING_DEMO_ENABLED:false}
+    password: ${DEMO_BANK_PASSWORD:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

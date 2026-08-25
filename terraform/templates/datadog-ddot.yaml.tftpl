@@ -1,0 +1,8 @@
+# DDOT Collector を有効化する（Linux Agent 7.78+）
+# 参考: https://docs.datadoghq.com/opentelemetry/setup/ddot_collector/install/linux/
+otelcollector:
+  enabled: true
+
+agent_ipc:
+  port: 5009
+  config_refresh_interval: 60

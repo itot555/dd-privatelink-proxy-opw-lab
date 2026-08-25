@@ -1,0 +1,67 @@
+logs:
+  - type: file
+    path: /var/log/user-data.log
+    service: ${project_name}-system
+    source: user-data
+
+  - type: file
+    path: /var/log/datadog/agent.log
+    service: ${project_name}-system
+    source: datadog-agent
+
+  - type: file
+    path: /var/log/syslog
+    service: ${project_name}-system
+    source: syslog
+
+  - type: file
+    path: /var/log/auth.log
+    service: ${project_name}-system
+    source: auth
+
+  - type: file
+    path: /var/log/kern.log
+    service: ${project_name}-system
+    source: kernel
+
+  - type: file
+    path: /var/log/audit/audit.log
+    service: ${project_name}-audit
+    source: auditd
+
+  - type: file
+    path: /var/log/cloud-init.log
+    service: ${project_name}-system
+    source: cloud-init
+
+  - type: file
+    path: /var/log/cloud-init-output.log
+    service: ${project_name}-system
+    source: cloud-init
+
+  - type: file
+    path: /var/log/dd-lab/java-app.log
+    service: ${project_name}-java
+    source: java
+
+  - type: file
+    path: /var/log/dd-lab/python-app.log
+    service: ${project_name}-python
+    source: python
+
+  - type: file
+    path: /var/log/squid/access.log
+    service: ${project_name}-squid
+    source: squid
+
+  - type: file
+    path: /var/log/squid/cache.log
+    service: ${project_name}-squid
+    source: squid
+
+  - type: journald
+    include_units:
+      - op-logs.service
+      - op-traces.service
+    service: ${project_name}-opw
+    source: observability_pipelines
