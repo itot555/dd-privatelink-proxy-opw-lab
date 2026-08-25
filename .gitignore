@@ -1,0 +1,82 @@
+#------------------------------------------------------------------------------
+# Terraform — state / plans / local overrides（Secret を含むため Git 禁止）
+#------------------------------------------------------------------------------
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# 変数ファイル（API Key、allowed_ip 等の個人・環境固有情報）
+# locals.tf.example は追跡する。コピーした locals.tf だけ除外する。
+locals.tf
+locals.tf.json
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+**/terraform.tfvars
+**/terraform.tfvars.json
+
+# Terraform apply でローカル生成される SSH 鍵（秘密鍵・公開鍵ともに除外）
+terraform/keys/
+**/keys/*-ssh-key
+**/keys/*-ssh-key.pub
+
+#------------------------------------------------------------------------------
+# Credentials / secrets / PII
+#------------------------------------------------------------------------------
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+id_ecdsa
+*.secret
+credentials
+credentials.json
+secrets/
+**/secrets.json
+.env
+.env.*
+!.env.example
+
+# Datadog / Private Location 等のローカル設定ダンプ
+*private-location*.json
+*pl-config*.json
+*.credentials
+
+#------------------------------------------------------------------------------
+# Build artifacts
+#------------------------------------------------------------------------------
+terraform/*.zip
+apps/java-app/target/
+apps/python-app/.venv/
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+dist/
+build/
+apps/banking-ui/*.tsbuildinfo
+
+#------------------------------------------------------------------------------
+# Steering（この公開レポでは使用しない）
+#------------------------------------------------------------------------------
+.steering/
+
+#------------------------------------------------------------------------------
+# OS / editor / tooling
+#------------------------------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
